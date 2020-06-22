@@ -1,0 +1,137 @@
+1) Install k8s service catalog if it is not already installed.
+I did it the following way:
+Cloned sc-cat repo: git clone https://github.com/kubernetes-sigs/service-catalog.git
+But you may try do it as described there or somewhere else: https://kubernetes.io/docs/tasks/service-catalog/install-service-catalog-using-helm/
+Then
+helm install service-catalog ./service-catalog/charts/catalog/
+wait until pods are ready
+
+2) git clone https://github.com/thecodeteam/ecs-cf-service-broker.git
+
+3) Set proper configs in ecs-cf-service-broker/charts/values.yaml
+Set ECS instance settings:
+Rep Group
+namespace
+certificate - from your ECS, like below
+certificate: |
+  -----BEGIN CERTIFICATE-----
+  MIIDCDCCAfCgAwIBAgIIHjiVHEHEuFcwDQYJKoZIhvcNAQELBQAwFDESMBAGA1UE
+  AxMJbG9jYWxob3N0MB4XDTIwMDYxNTA4MTExMFoXDTMwMDYxMzA4MTExMFowFDES
+  MBAGA1UEAxMJbG9jYWxob3N0MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKC
+  AQEAsGIaje29vDoVKbxhrmtG2FuE7l7TSSJJiV/gQteBKyv0U0jihbtbKVaHqdYu
+  jNqIiHoPiD/VvAQpUlBP5sJ9UEqzVv53ZDZo301ptNtY8i4anzSulzYNxSR+xJjj
+ 512aCXkzdz2j6J+4q3fQvYEl8HJKM14B9rJoChQo4bYfwbRp0XY91mlS8gs5zMC9
+  Sm2aUP0f2kH1yXixFuRo4UFBVZUrJth+D8jluOwKdyz5s8g9yDRzPCa48L+pxJYx
+  aJ7rx83MkZWxKdeeykjDE4OhAul7mrRmRY5pVs4oedpWQi2fv2/sz1KA3CU3NTPT
+  11aT7RM1kzbbxaMEEGCNU3N28QIDAQABo14wXDAfBgNVHSMEGDAWgBSQ9JT9+mz+
+  8TWyu9kgeH0NP6J/xjAaBgNVHREEEzARgglsb2NhbGhvc3SHBH8AAAEwHQYDVR0O
+  BBYEFJD0lP36bP7xNbK72SB4fQ0/on/GMA0GCSqGSIb3DQEBCwUAA4IBAQCphOC+
+  L4I2eGAIQZy2yWKM0MVp5nq+Ihp+tJSnt/Vrx2D5Lz33TEw/7XOgv28t5pShbRCK
+  c4tchlpinizHXKN6ew8DjOX061GeJjDagznO2YD/bthQ28SC+i11u8inDzWitsNx
+  jVSUCXcFx3brR5fgnOMUyxF1oW/m9NtzEfXk4ifALzMWycEZ76MttmlIgh6TtyAX
+  8N/Ap+BDo42IgLTuiz2ifAN1ikcGKU6oVLebvYJ2cfWgBhyVpY42u3Ydh+cEbr89
+  ksKzc0T7AXkpFlIlNhLlH9I4LOAJkk0LKXVYrwlbwP+Ae+tedlu1R8cUEI2yVz+t
+  iIG54u5UWcZrfFQ3
+  -----END CERTIFICATE-----
+endpoints and creds, like these:
+# ECS Management Endpoint
+api:
+  name: ecs-broker
+  namespace: ns1
+  endpoint: "http://<ecs_ip>:9020"
+  username: root
+  password: ChangeMe
+ecsConnection:
+  name: ecs-broker-connection
+  endpoint: "https://<ecs_ip>:4443"
+  username: root
+  password: ChangeMe
+'serviceCatalog: true' in the end of file
+
+3) Install service broker
+
+helm install -f values/broker-values.yml ecs-service-broker ecs-cf-service-broker/charts
+wait until pods are ready and ClusterServiceBroker is ready too:
+kubectl get clusterservicebrokers
+Some service classes and plans should appear in k8s, in accordance with https://kubernetes.io/docs/concepts/extend-kubernetes/service-catalog/#api-resources
+kubectl get ClusterServicePlans
+kubectl get ClusterServiceClasses
+Note that currently only ecs-bucket service is avaliable
+
+4) Create service instance
+kubectl apply -f ServiceInstance.yaml
+Example of a file:
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceInstance
+metadata:
+  name: ecs-service-broker-instance
+  namespace: default
+spec:
+  # References one of the previously returned services
+  clusterServiceClassExternalName: ecs-bucket
+  clusterServicePlanExternalName: 5gb
+Wait until service instance is provisioned:
+kubectl get serviceinstances
+
+5) Create service binding
+kubectl apply -f ServiceBinding.yaml
+Example of a file:
+apiVersion: servicecatalog.k8s.io/v1beta1
+kind: ServiceBinding
+metadata:
+  name: ecs-service-broker-binding
+  namespace: default
+spec:
+  instanceRef:
+    # ServiceInstance name
+    name: ecs-service-broker-instance
+wait until it is ready:
+kubectl get ServiceBindings
+
+6) After binding is ready, corresponding secred is created in k8s secrest, name is similar to binding name.
+This secret contains S3 connection details which can be used by app in k8s.
+I used test app for it: docker pull svistunovaleksandr/test-repo:broker-test-app
+Below is pod configuration for this app to use created secret with creds:
+apiVersion: v1
+kind: Pod
+metadata:
+  name: broker-test-app
+spec:
+  containers:
+  - name: broker-test-app
+    image: svistunovaleksandr/test-repo:broker-test-app
+    imagePullPolicy: Always
+    ports:
+    - name: web
+      containerPort: 8080
+      protocol: TCP
+    env:
+    - name: "ENDPOINT"
+      valueFrom:
+        secretKeyRef:
+          name: ecs-service-broker-binding
+          key: endpoint
+    - name: "ACCESS_KEY"
+      valueFrom:
+        secretKeyRef:
+          name: ecs-service-broker-binding
+          key: accessKey
+    - name: "SECRET_KEY"
+      valueFrom:
+        secretKeyRef:
+          name: ecs-service-broker-binding
+          key: secretKey
+    - name: "BUCKET"
+      valueFrom:
+        secretKeyRef:
+          name: ecs-service-broker-binding
+          key: bucket
+
+You can get into this pod and run curl queries like these:
+curl -X PUT -d testValue 127.0.0.1:8080/testKey
+curl 127.0.0.1:8080/testKey
+curl -X DELETE 127.0.0.1:8080/testKey
+or do it via a kubectl or somehow else:
+kubectl exec -it broker-test-app -- curl -X PUT -d testValue 127.0.0.1:8080/testKey
+kubectl exec -it broker-test-app -- curl 127.0.0.1:8080/testKey
+kubectl exec -it broker-test-app -- curl -X DELETE 127.0.0.1:8080/testKey
