@@ -6,3 +6,4 @@ metadata:
 spec:
   instanceRef:
     name: yaml-instance-v2
+    secretName: yaml-secret
