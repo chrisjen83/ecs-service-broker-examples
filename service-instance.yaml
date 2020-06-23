@@ -6,4 +6,5 @@ metadata:
 spec:
   clusterServiceClassExternalName: ecs-bucket
   clusterServicePlanExternalName: 10gb
-  reclaim-policy: Delete
+  instanceRef:
+    reclaim-policy: Delete
