@@ -1,10 +1,10 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
-  name: yaml-instance-v6
-  namespace: default
+  name: yaml-instance-v6  ##Name of your instance inside Kubernetes
+  namespace: default      ##Which Kubernets Namespace do you want this binding to occur in.  Must be the same as your pod you want to connect to.
 spec:
   clusterServiceClassExternalName: ecs-bucket
   clusterServicePlanExternalName: 10gb
   parameters:
-    reclaim-policy: Delete
+    reclaim-policy: Delete    ##You can select if the Plan allows different unbind policies.  Options can be Fail, Delete, Detach

@@ -1,9 +1,9 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceBinding
 metadata:
-  name: yaml-instance-v6-binding
+  name: yaml-instance-v6-binding      ##Name of your instance binding to the namespace, specified below.
   namespace: default
 spec:
   instanceRef:
     name: yaml-instance-v6
-  secretName: shhh-my-secret
+  secretName: shhh-my-secret      ##You can re-name your Kubernetes secret file differently to your binding name.  If not specified your secret will use binding name.
