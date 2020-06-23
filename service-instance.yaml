@@ -5,6 +5,6 @@ metadata:
   namespace: default      ##Which Kubernets Namespace do you want this binding to occur in.  Must be the same as your pod you want to connect to.
 spec:
   clusterServiceClassExternalName: ecs-bucket
-  clusterServicePlanExternalName: 10gb
+  clusterServicePlanExternalName: 5gb
   parameters:
     reclaim-policy: Delete    ##You can select if the Plan allows different unbind policies.  Options can be Fail, Delete, Detach
