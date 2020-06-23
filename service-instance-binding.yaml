@@ -1,9 +1,9 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceBinding
 metadata:
-  name: yaml-instance-v2-binding
+  name: yaml-instance-v3-binding
   namespace: default
 spec:
   instanceRef:
-    name: yaml-instance-v2
-    secretName: yaml-secret
+    name: yaml-instance-v3
+    reclaim-policy: Detach
