@@ -1,7 +1,7 @@
 apiVersion: servicecatalog.k8s.io/v1beta1
 kind: ServiceInstance
 metadata:
-  name: yaml-instance-v2
+  name: yaml-instance-v3
   namespace: default
 spec:
   clusterServiceClassExternalName: ecs-bucket
