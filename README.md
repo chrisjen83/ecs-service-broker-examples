@@ -1,8 +1,8 @@
-###  ###
+###  
 
-To deploy within Kubernetes a deployment which needs to consume ECS S3 bucket resources you can leverage the ECS Service Broker which has been installed onto your Kubernetes distribution
+To deploy a micro-services deployment which needs to consume Dell Technologies ECS S3 bucket resources you can leverage the ECS Service Broker which has been installed on your Kubernetes distribution.
 
-The Service Broker will automatically provision a bucket and object user then the accessKey and secretKey will be created and placed inside a Kubernetes Secret and mapped to the namespace where a deployment or pod can consume it.
+The Service Broker will automatically provision a bucket and object user then the accessKey and secretKey will be created and placed inside a Kubernetes Secret and mapped to the namespace where a deployment or pod can consume.
 
 To start the provisioning process follow the below steps.
 
@@ -10,7 +10,7 @@ To start the provisioning process follow the below steps.
 
 A service instance is a representation of an ECS bucket automatically provisioned against a published service plan.  You will need to create at least one instance (bucket) to connect to your application.
 
-To create a bucket you will need to apply a yaml configuration similar to below.
+To create an instance you will need to apply a YAML configuration similar to below.
 
 ```yaml
 apiVersion: servicecatalog.k8s.io/v1beta1
@@ -21,13 +21,19 @@ metadata:
 spec:
   clusterServiceClassExternalName: ecs-bucket
   clusterServicePlanExternalName: 5gb
+  parameters:
+   reclaim-policy: Delete
 ```
 
-In the ServiceInstance yaml you will declare an instance name (name) and a kubernetes namespace (namespace) where your applications will run.  The kubernetes namespace needs to exist in the cluster.
+In the ServiceInstance YAML you will declare an instance name (name) and a kubernetes namespace (namespace) where your applications will run.  The kubernetes namespace needs to exist in the cluster prior to running this YAML.
 
-In the spec part of the yaml you will declare the ECS cluster you want to provision a bucket in (clusterServiceClassExternalName) and select your plan (clusterServicePlanName).
+In the spec section of the YAML you will declare the ECS cluster you want to provision a bucket in (clusterServiceClassExternalName) and select your plan (clusterServicePlanName).
 
-To understand the ECS Clusters avalible via the broker issue the below command on your Kubernetes cluster.
+At the completion of the Service Instance YAML you will have a bucket created on the ECS Cluster but there will be no access to the bucket. To gain access you will need to bind your created instance to your namespace.  Follow section two to complete an instance bind.
+
+### Note
+
+To understand the ECS Clusters avalible via the Service Broker issue the below command on your Kubernetes cluster.
 
 ```bash
 root@csed204:/# kubectl get clusterserviceclass
@@ -46,13 +52,34 @@ NAME                                   EXTERNAL-NAME   BROKER                   
 
 ```
 
-Use the EXTERNAL-NAME column to select the plan to include in your serviceInstance YAML.
+Use the EXTERNAL-NAME column to select the plan to include in your serviceInstance YAML.  If there is a plan which is not listed you will need to contact your administration team.
+
+In the ServiceInstance YAML there are a few custom parameters which can be applied to your bucket.  These parameters deal with reclaim policies, Access During Outage and bucket encryption.  Below are a list of optional paramets which can be included in the ServiceInstance YAML.  These parameters are uniquie to the ECS object storage solution.
 
 
 
-### Create service binding
 
 
+### 2. Create service binding
+
+Binding an Instance to a Kubernetes cluster will tell the service broker to create an object user with full control rights to the instance (bucket) and then create a secret configuration and place the secret into the namespace you configured in the Instance creation step.
+
+Below is the YAML structure you will use to initiate a binding.
+
+```yaml
+kind: ServiceBinding
+metadata:
+  name: yaml-instance-v2-binding
+  namespace: default
+spec:
+  instanceRef:
+    name: yaml-instance-v2
+  secretName: shhh-my-secret  
+```
+
+In the metadata name line you will add a name to identify your binding, in the namespace line add in the Kubernetes namespace which you want to use the secret in or where your application resides.  The namespace has to exist at the time of running this YAML.
+
+In spec, instanceeRef the name line needs to match the instance you created in the previous YAML, this is so the binding know which bucket to create the object user for.  In the secretName this allows you to apply a custom name to your Kubernetes secret file.
 
 
 
@@ -70,7 +97,3 @@ Use the EXTERNAL-NAME column to select the plan to include in your serviceInstan
 ```
 
 
-
-
-
-![](/Users/christopherjenkins/Desktop/Screen Shot 2020-06-22 at 2.41.52 pm.png)

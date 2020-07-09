@@ -8,3 +8,6 @@ spec:
   clusterServicePlanExternalName: 5gb
   parameters:
     reclaim-policy: Delete    ##You can select if the Plan allows different unbind policies.  Options can be Fail, Delete, Detach
+    access-during-outage: true
+    encrypted: true
+    
