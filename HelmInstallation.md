@@ -1,10 +1,10 @@
 ## Installing the ECS Service Broker with Helm
 
-The ECS Service broker is based on the open source project Open Service Broker for Kubernetes.  The easiest way to install the ECS Service Broker into your Kubernetes distribution is to use a local Helm installation.
+The ECS Service broker is based on the open-source project Open Service Broker for Kubernetes. The easiest way to install the ECS Service Broker into your Kubernetes distribution is to use a local Helm installation.
 
-This guide assumes you have Helm installed on a client machine which can access your Kubernetes Master Server, a Kubernetes cluster setup and the service catalog pods deployed in your Kubernetes cluster.
+This guide assumes you have Helm installed on a client machine which can access your Kubernetes Master Server, a Kubernetes cluster setup and the service catalogue pods deployed in your Kubernetes cluster.
 
-If you have not deployed the service catalog into your Kubernetes Cluster before, please refer to the below link on how to install Service Catalog on popular Kubernetes distributions.
+If you have not deployed the service catalogue into your Kubernetes Cluster before, please refer to the below link on how to install Service Catalog on popular Kubernetes distributions.
 
 [Roll you own Kubernetes]:https://kubernetes.io/docs/tasks/service-catalog/install-service-catalog-using-helm/
 [ Redhat OpenShift ]: https://docs.openshift.com/container-platform/4.2/applications/service_brokers/installing-service-catalog.html
@@ -13,17 +13,17 @@ If you have not deployed the service catalog into your Kubernetes Cluster before
 
 ### 1. Installing ECS Service Broker
 
-On your client machine which can connect to your Kubernetes CLuster and have helm install perform the below steps.
+On your client machine perform the below steps:
 
 1. Clone the ECS Service Broker GitHub repository to your local machine.
 
    [ Link ]:https://github.com/thecodeteam/ecs-cf-service-broker.git
 
-2. Change directory into the now clones repository to the path ecs-cf-service-broker/charts.
+2. Change directory into the now clones repository to the path **ecs-cf-service-broker/charts**.
 
-3. Once in the charts directory you will need to cutomise the values.yaml file to reflect the ECS infrastructure installed on your premises. 
+3. Once in the charts directory you will need to cutomise the **values.yaml** file to reflect the ECS infrastructure installed on your premises. 
 
-   Please see below the modifiable section of the values.yaml file with comments on what you need to include.
+   Please see below the modifiable sections of the **values.yaml** file with comments on what you need to include.
 
    ```yaml
    namespace: "131701420476682255"	# ECS namespace FOR ALL SC created Buckets
@@ -61,7 +61,7 @@ On your client machine which can connect to your Kubernetes CLuster and have hel
    defaultReclaimPolicy: Detach	#You can alter the default delete policy when an instance has been unbound.  The options are Detach, Delete or Fail.
    ```
 
-   Below is a complete values.yaml file ready for installation. You values.yaml should look similar.
+   Below is a complete values.yaml file ready for installation. Your **values.yaml** should look similar.
 
    ```yaml
    # Default values for charts.
@@ -70,30 +70,30 @@ On your client machine which can connect to your Kubernetes CLuster and have hel
    
    replicaCount: 1
    
-   namespace: "131701420476682255"	# ECS namespace FOR ALL SC created Buckets
-   prefix: "kubetesting-"	# You can customise the bucket prefix to whatever you want
-   replicationGroup: "ecstestdrivegeo"	# Copy the human readable name of the ECS replication group to associate with your SC created buckets
+   namespace: "131701420476682255"
+   prefix: "kubetesting-"
+   replicationGroup: "ecstestdrivegeo"
    
    # Management SSL Custom CA Trust Certificate
    certificate: |
      -----BEGIN CERTIFICATE-----
-   # Copy your ECS Managment certificate into this section.  This is essentual for connecting to your management API endpoint
+   
      -----END CERTIFICATE-----
    
    # ECS Object API
    api:
      name: ecs-broker m
-     namespace: 131701420476682255	# Copy the same namespace as above
+     namespace: 131701420476682255
      endpoint: "https://FQDN_ECS_DATA_ENDPOINT"
-     username: ****************	# Namespace Administrator
-     password: ****************	# Namespace Administrator Password
+     username: ****************	
+     password: ****************
    
    # ECS Management Endpoint
    ecsConnection:
      name: ecs-broker-connection  j
      endpoint: "https://FQDN_ECS_Mgnt_ENDPOINT"
-     username: ****************	# ECS Management User
-     password: ****************	# ECS Management Password
+     username: ****************
+     password: ****************
    
    image:
      repository: objectscale/ecs-service-broker
@@ -141,14 +141,14 @@ On your client machine which can connect to your Kubernetes CLuster and have hel
    affinity: {}
    
    # The default ReclaimPolicy to use if one has not been explicitly specified (valid values are Fail, Detach, Delete)
-   defaultReclaimPolicy: Detach	#You can alter the default delete policy when an instance has been unbound.  The options are Detach, Delete or Fail.
+   defaultReclaimPolicy: Detach
    
    # Indicates this should be registered as a ServiceCatalog Broker
    serviceCatalog: true
    
    ```
 
-   4. Staying in the same directory ecs-cf-service-broker/charts you are now ready to install the ECS Serivce Broker via Helm.
+   4. Staying in the same directory **ecs-cf-service-broker/charts** you are now ready to install the ECS Serivce Broker via Helm.
 
       Issue the following command at the terminal prompt to start the install.
 
@@ -158,7 +158,9 @@ On your client machine which can connect to your Kubernetes CLuster and have hel
 
 
 
-5. When Helm returns an installation complete, you can now inspect Kubernetes to see what state the ics-service-broker pod is in.  Issue the below command to see, please note that for -n 
+5. When Helm returns an installation complete, you can now inspect your Kubernetes Cluster to see what state the ecs-service-broker pod is in.
+
+   Issue the below command to see, please note that for **-n** you need to specify the namespace you have installed the service broker into.
 
    ```bash
    root@csed204:~/ecs-cf-service-broker/charts# kubectl get pods -n catalog
@@ -169,4 +171,4 @@ On your client machine which can connect to your Kubernetes CLuster and have hel
    
    ```
 
-   
+   Once the **ecs-service-broker-<UUID>** is in the running state you have then completed the Helm installation of ECS Service Broker.
